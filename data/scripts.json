@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "scripts": [
+    {
+      "id": "hello_test",
+      "name": "テストスクリプト",
+      "command": "python3 /Users/shuta/sakana-bot/scripts/hello_test.py",
+      "workdir": "/Users/shuta/sakana-bot",
+      "risk_level": "LOW",
+      "description": "動作確認用テストスクリプト",
+      "timeout": 30,
+      "schedule": null,
+      "last_run": "2026-02-23T14:36:07.787117+09:00",
+      "last_status": "success",
+      "created_at": "2026-02-23T07:00:00+09:00",
+      "last_duration": 0.1
+    },
+    {
+      "id": "system_info",
+      "name": "システム情報表示",
+      "command": "bash /Users/shuta/sakana-bot/scripts/system_info.sh",
+      "workdir": "/Users/shuta/sakana-bot",
+      "risk_level": "LOW",
+      "description": "Mac miniのシステム情報を表示",
+      "timeout": 30,
+      "schedule": null,
+      "last_run": "2026-02-23T14:36:29.558824+09:00",
+      "last_status": "success",
+      "created_at": "2026-02-23T07:00:00+09:00",
+      "last_duration": 0.2
+    }
+  ]
+}

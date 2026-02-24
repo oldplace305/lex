@@ -1,0 +1,62 @@
+{
+  "name": "しゅうた",
+  "birthday": "1995-11-25",
+  "gender": "男性",
+  "role": "薬剤師 / 管理薬剤師 / エリアマネージャー（2店舗）",
+  "pharmacy_license": "2020-02取得",
+  "workplace": "在宅専門薬局（調剤薬局グループ12店舗・従業員約100名・急成長企業）",
+  "annual_income": "1000万円",
+  "income_goal": "5年後に本業年収1500万円",
+  "family": {
+    "wife": {
+      "birthday": "1985-11-06"
+    },
+    "son": {
+      "birthday": "2023-10-25"
+    }
+  },
+  "skills": [
+    "ノーコードWeb作成",
+    "PCの組み立て",
+    "SNS代行",
+    "ギター・音楽制作",
+    "ミラーレスカメラ撮影・編集",
+    "デザイン（アマチュアだがセンスあり）"
+  ],
+  "sns": {
+    "x_handle": "薬剤師のさかな🐟",
+    "purpose": "note販売等で収益化",
+    "content_themes": [
+      "調剤報酬改定",
+      "薬局経営戦略",
+      "AI活用",
+      "在宅医療"
+    ]
+  },
+  "business": {
+    "name": "Nosuke Lab",
+    "type": "個人事業（スタートアップ＆研究室）",
+    "vision": "スキルを活用したコンサル・コンテンツ制作",
+    "revenue_goals": {
+      "2026": {
+        "annual_gross_profit": "60万円",
+        "monthly_budget": "1万円"
+      },
+      "2027": {
+        "annual_gross_profit": "100万円",
+        "monthly_budget": "要相談"
+      },
+      "2030": {
+        "annual_gross_profit": "1000万円",
+        "monthly_budget": "要相談"
+      }
+    }
+  },
+  "communication_style": {
+    "tone": "フランクだが論理的。結論ファーストを好む",
+    "preferences": "長文説明より要点整理。判断材料を提示してほしい"
+  },
+  "current_projects": [
+    "Nosuke Lab 立ち上げ"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "approved_actions": [
+    {
+      "pattern": "action:許可。_というか、botからのファイル書き込み権限は基本的に許可するので、今後は聞かなくても大丈夫。",
+      "risk_level": "MEDIUM",
+      "approved_at": "2026-02-23T17:22:50.658679+09:00",
+      "note": "許可。\nというか、botからのファイル書き込み権限は基本的に許可するので、今後は聞かなくても大丈夫。\nこのあたりのホワイトリスト？って作ってたよね？"
+    }
+  ],
+  "always_require_approval": [
+    "delete:*",
+    "send_email:*",
+    "modify_patient_data:*",
+    "payment:*",
+    "git_push:*"
+  ]
+}

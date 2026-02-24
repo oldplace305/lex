@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.shuta.sakana-bot</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/shuta/sakana-bot-start.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/shuta</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/shuta</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <!-- ログイン時に自動起動 -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- クラッシュ時に自動再起動（正常終了時は再起動しない） -->
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <!-- 再起動間隔（秒）- 連続クラッシュ防止 -->
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- ログ出力先（ホームディレクトリ配下でアクセス権限問題を回避） -->
+    <key>StandardOutPath</key>
+    <string>/tmp/sakana-bot-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/sakana-bot-stderr.log</string>
+</dict>
+</plist>

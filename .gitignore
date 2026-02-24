@@ -1,0 +1,32 @@
+# Environment
+.env
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Logs
+logs/*.log
+
+# Data (large/auto-generated files)
+data/conversation_log.jsonl
+data/error_log.jsonl
+
+# Backups
+backups/
+
+# Temp
+/tmp/
+*.tmp
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
