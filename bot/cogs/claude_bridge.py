@@ -1,7 +1,13 @@
 """Claude Bridge Cog - メッセージをClaude Code CLIにルーティング。
 Lexのコア機能。ユーザーのメッセージをClaude Codeに中継し、
 スマート承認システムで安全性を確保した上で結果をDiscordに返す。
+
+Phase 1改善:
+- _safe_reply: Interaction期限切れ時のフォールバック
+- _progress_notifier: 長時間処理の進捗通知
+- max_turns=10固定を廃止、プロファイル自動判定に委ねる
 """
+import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -26,7 +32,9 @@ class ClaudeBridge(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.claude = ClaudeCLIBridge(timeout=CLAUDE_TIMEOUT)
+        # ヘルスモニターが利用可能ならCLIに渡す
+        health = getattr(bot, 'health_monitor', None)
+        self.claude = ClaudeCLIBridge(health_monitor=health)
         self.profile = OwnerProfile()
         self.approval = SmartApproval()
         self.conversation = ConversationManager()
@@ -55,6 +63,70 @@ class ClaudeBridge(commands.Cog):
 
         return chunks
 
+    async def _safe_reply(self, reply_func, channel,
+                          content=None, embed=None, view=None):
+        """応答を送信。Interaction期限切れ時はchannel.sendにフォールバック。
+
+        Args:
+            reply_func: 通常の応答関数（message.reply or interaction.followup.send）
+            channel: フォールバック先のチャンネル
+            content: テキストメッセージ
+            embed: Embedオブジェクト
+            view: Viewオブジェクト
+        """
+        try:
+            kwargs = {}
+            if content is not None:
+                kwargs["content"] = content
+            if embed is not None:
+                kwargs["embed"] = embed
+            if view is not None:
+                kwargs["view"] = view
+            await reply_func(**kwargs)
+        except (discord.errors.NotFound, discord.errors.HTTPException) as e:
+            logger.warning(
+                f"応答送信失敗（Interaction期限切れ等）、"
+                f"channel.sendにフォールバック: {e}"
+            )
+            try:
+                kwargs_fallback = {}
+                if content is not None:
+                    kwargs_fallback["content"] = content
+                if embed is not None:
+                    kwargs_fallback["embed"] = embed
+                if view is not None:
+                    kwargs_fallback["view"] = view
+                await channel.send(**kwargs_fallback)
+            except Exception as e2:
+                logger.error(f"フォールバック送信も失敗: {e2}")
+
+    async def _progress_notifier(self, channel, cancel_event: asyncio.Event):
+        """長時間処理の進捗通知を送信するバックグラウンドタスク。
+
+        Args:
+            channel: 通知先チャンネル
+            cancel_event: キャンセル用イベント
+        """
+        try:
+            # 30秒待機
+            await asyncio.sleep(30)
+            if cancel_event.is_set():
+                return
+            await channel.send("⏳ 処理中です...（30秒経過）")
+
+            # さらに60秒待機（計90秒）
+            await asyncio.sleep(60)
+            if cancel_event.is_set():
+                return
+            await channel.send(
+                "⏳ まだ処理しています...（90秒経過。"
+                "複雑な処理のため時間がかかっています）"
+            )
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.debug(f"進捗通知エラー（無視）: {e}")
+
     async def _process_with_approval(self, content: str, channel,
                                      reply_func, defer_func=None):
         """承認システムを通してClaude Codeを呼び出す共通処理。
@@ -74,22 +146,27 @@ class ClaudeBridge(commands.Cog):
 
         # 承認が必要な場合
         if not approval_result.approved and approval_result.needs_user_input:
-            # deferされている場合はfollowupで送信
             embed = build_approval_embed(approval_result, content)
             view = ApprovalView(approval_result, self.approval, content)
 
-            if defer_func:
-                # スラッシュコマンドからの呼び出し
-                await reply_func(embed=embed, view=view)
-            else:
-                await channel.send(embed=embed, view=view)
+            await self._safe_reply(
+                reply_func if not defer_func else reply_func,
+                channel,
+                embed=embed,
+                view=view,
+            )
 
             # ユーザーの決定を待つ
             decision = await view.wait_for_decision()
 
             if decision in ("deny", "timeout"):
                 if decision == "timeout":
-                    await channel.send("⚡ 承認がタイムアウトしました。操作をキャンセルします。")
+                    try:
+                        await channel.send(
+                            "⚡ 承認がタイムアウトしました。操作をキャンセルします。"
+                        )
+                    except Exception:
+                        pass
                 return  # 実行しない
 
         # 会話ログにユーザーメッセージを記録
@@ -104,17 +181,32 @@ class ClaudeBridge(commands.Cog):
         if conversation_context:
             system_prompt += "\n\n" + conversation_context
 
-        # 全リスクレベルで10ターン・ツール制限なし
+        # 許可ツール取得
         allowed_tools = self.approval.get_allowed_tools(
             approval_result.risk_level
         )
 
-        result = await self.claude.ask(
-            content,
-            system_prompt=system_prompt,
-            allowed_tools=allowed_tools,
-            max_turns=10,
+        # 進捗通知タスクを開始
+        cancel_progress = asyncio.Event()
+        progress_task = asyncio.create_task(
+            self._progress_notifier(channel, cancel_progress)
         )
+
+        try:
+            # プロファイル自動判定に委ねる（max_turns明示指定なし）
+            result = await self.claude.ask(
+                content,
+                system_prompt=system_prompt,
+                allowed_tools=allowed_tools,
+            )
+        finally:
+            # 進捗通知を停止
+            cancel_progress.set()
+            progress_task.cancel()
+            try:
+                await progress_task
+            except asyncio.CancelledError:
+                pass
 
         # 結果を送信
         if result["success"]:
@@ -128,13 +220,8 @@ class ClaudeBridge(commands.Cog):
                 cost_usd=result.get("cost_usd", 0),
             )
 
-            if defer_func:
-                await reply_func(chunks[0])
-                for chunk in chunks[1:]:
-                    await reply_func(chunk)
-            else:
-                for chunk in chunks:
-                    await reply_func(chunk)
+            for chunk in chunks:
+                await self._safe_reply(reply_func, channel, content=chunk)
         else:
             error_msg = f"⚠️ エラーが発生しました: {result['error']}"
             # エラーもログに記録
@@ -142,10 +229,7 @@ class ClaudeBridge(commands.Cog):
                 content=f"[ERROR] {result['error']}",
                 risk_level=approval_result.risk_level,
             )
-            if defer_func:
-                await reply_func(error_msg)
-            else:
-                await reply_func(error_msg)
+            await self._safe_reply(reply_func, channel, content=error_msg)
 
     @app_commands.command(name="ask", description="Lexに質問・指示する")
     @app_commands.describe(question="質問内容")
@@ -230,6 +314,20 @@ class ClaudeBridge(commands.Cog):
             f"メッセージ受信（{'DM' if is_dm else 'メンション'}）: "
             f"{content[:50]}..."
         )
+
+        # Phase 3: 自己修復キーワード検知
+        repair_cog = self.bot.get_cog("SelfRepair")
+        if repair_cog and repair_cog.is_repair_request(content):
+            logger.info("自己修復リクエスト検知 → SelfRepairService に委譲")
+            async with message.channel.typing():
+                result = await repair_cog.repair_service.attempt_repair(
+                    trigger="user_request"
+                )
+                msg = result["message"]
+                if len(msg) > 1900:
+                    msg = msg[:1900] + "\n..."
+                await message.reply(msg)
+            return
 
         async with message.channel.typing():
             await self._process_with_approval(

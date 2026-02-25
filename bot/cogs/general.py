@@ -107,6 +107,11 @@ class General(commands.Cog):
         )
         logger.info("オーナーからの/restartコマンドでBot再起動を実行")
 
+        # ヘルス状態を保存（再起動後に引き継ぐため）
+        health = getattr(self.bot, 'health_monitor', None)
+        if health:
+            health.save_state()
+
         # launchd KeepAlive が有効なので、プロセス終了後に自動で再起動される
         await self.bot.close()
         os._exit(0)
@@ -156,7 +161,11 @@ class General(commands.Cog):
                 "`/script_remove` - スクリプト削除\n\n"
                 "**プロフィール**\n"
                 "`/profile` - プロフィール表示\n"
-                "`/add_project` - プロジェクト追加"
+                "`/add_project` - プロジェクト追加\n\n"
+                "**ヘルス & 自己修復**\n"
+                "`/health` - 健康状態チェック\n"
+                "`/diagnose` - 自己診断（読み取り専用）\n"
+                "`/repair` - 自己修復（診断+修復）"
             ),
             inline=False,
         )

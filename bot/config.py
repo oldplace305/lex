@@ -20,5 +20,9 @@ CLAUDE_OAUTH_TOKEN = os.getenv("CLAUDE_OAUTH_TOKEN", "")
 # 定期報告チャンネル（0 = DMにフォールバック）
 REPORT_CHANNEL_ID = int(os.getenv("REPORT_CHANNEL_ID", "0"))
 
+# 自己修復設定
+REPAIR_BUDGET_PER_DAY = float(os.getenv("REPAIR_BUDGET_PER_DAY", "1.0"))
+REPAIR_BUDGET_PER_ATTEMPT = float(os.getenv("REPAIR_BUDGET_PER_ATTEMPT", "0.5"))
+
 # ログ設定
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

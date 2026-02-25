@@ -19,3 +19,5 @@ SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 # データファイル
 OWNER_PROFILE_FILE = DATA_DIR / "owner_profile.json"
 CONVERSATION_LOG_FILE = DATA_DIR / "conversation_log.jsonl"
+ERROR_LOG_FILE = DATA_DIR / "error_log.jsonl"
+HEALTH_STATE_FILE = DATA_DIR / "health_state.json"
