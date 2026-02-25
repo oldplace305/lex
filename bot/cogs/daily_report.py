@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta, time
 from bot.services.claude_cli import ClaudeCLIBridge
 from bot.services.owner_profile import OwnerProfile
 from bot.services.conversation import ConversationManager
-from bot.config import OWNER_ID, CLAUDE_TIMEOUT, REPORT_CHANNEL_ID
+from bot.config import OWNER_ID, REPORT_CHANNEL_ID
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,8 @@ class DailyReport(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.claude = ClaudeCLIBridge(timeout=CLAUDE_TIMEOUT)
+        health = getattr(bot, 'health_monitor', None)
+        self.claude = ClaudeCLIBridge(health_monitor=health)
         self.profile = OwnerProfile()
         self.conversation = ConversationManager()
         self._report_enabled = True

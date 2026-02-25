@@ -14,7 +14,7 @@ from bot.services.script_manager import ScriptManager
 from bot.services.approval import SmartApproval, RiskLevel, ApprovalResult
 from bot.views.approval_view import ApprovalView, build_approval_embed
 from bot.services.claude_cli import ClaudeCLIBridge
-from bot.config import OWNER_ID, CLAUDE_TIMEOUT
+from bot.config import OWNER_ID
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,8 @@ class ScriptOps(commands.Cog):
         self.bot = bot
         self.scripts = ScriptManager()
         self.approval = SmartApproval()
-        self.claude = ClaudeCLIBridge(timeout=CLAUDE_TIMEOUT)
+        health = getattr(bot, 'health_monitor', None)
+        self.claude = ClaudeCLIBridge(health_monitor=health)
 
     def _is_owner(self, user_id: int) -> bool:
         """オーナーかどうか判定。"""
