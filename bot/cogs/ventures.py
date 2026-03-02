@@ -1,6 +1,7 @@
 """Ventures Cog - Ventureの提案・承認・管理。
 Discordリアクション（✅/❌）で承認フローを実現する。
 """
+import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -11,6 +12,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 
 from bot.config import OWNER_ID, REPORT_CHANNEL_ID
+from bot.services.venture_builder import VentureBuilder
 from bot.utils.paths import DATA_DIR
 
 logger = logging.getLogger(__name__)
@@ -213,6 +215,8 @@ class Ventures(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.manager = VentureManager()
+        health = getattr(bot, "health_monitor", None)
+        self.builder = VentureBuilder(health_monitor=health)
 
     async def propose_venture(
         self, channel: discord.TextChannel, analysis: dict
@@ -304,10 +308,12 @@ class Ventures(commands.Cog):
         if emoji == APPROVE_EMOJI:
             self.manager.approve(vid)
             await channel.send(
-                f"✅ **{vid} 承認！** — 「{venture['name']}」の構築を開始します。"
+                f"✅ **{vid} 承認！** — 「{venture['name']}」の構築を開始します。\n"
+                f"🔨 バックグラウンドで構築中... 完了したら報告します。"
             )
             logger.info(f"Venture承認（リアクション）: {vid}")
-            # TODO: Phase 3でここから自動構築パイプラインを起動
+            # バックグラウンドで構築パイプラインを起動
+            asyncio.create_task(self._build_venture(vid, venture, channel))
 
         elif emoji == REJECT_EMOJI:
             self.manager.reject(vid)
@@ -316,7 +322,153 @@ class Ventures(commands.Cog):
             )
             logger.info(f"Ventureスキップ（リアクション）: {vid}")
 
+    async def _build_venture(self, vid: str, venture: dict,
+                              channel: discord.TextChannel):
+        """バックグラウンドでVentureを構築し、結果を報告する。"""
+        try:
+            # 状態を "building" に更新
+            self.manager.update_state(vid, "building")
+
+            result = await self.builder.build(vid, venture)
+
+            if result["success"]:
+                # デプロイURL取得
+                url = result.get("url")
+                summary = result.get("summary", "構築完了")
+
+                if url:
+                    # デプロイ成功
+                    self.manager.update_state(
+                        vid, "deployed",
+                        url=url,
+                        deployed_date=datetime.now(JST).strftime("%Y-%m-%d"),
+                    )
+                    embed = discord.Embed(
+                        title=f"🚀 {vid} デプロイ完了！",
+                        description=f"**{venture['name']}**",
+                        color=discord.Color.green(),
+                        url=url,
+                    )
+                    embed.add_field(name="URL", value=url, inline=False)
+                    embed.add_field(name="概要", value=summary, inline=False)
+                else:
+                    # コード生成成功、デプロイは未実施
+                    self.manager.update_state(vid, "approved")
+                    project_dir = result.get("project_dir", "")
+                    embed = discord.Embed(
+                        title=f"🔨 {vid} コード生成完了",
+                        description=f"**{venture['name']}**",
+                        color=discord.Color.blue(),
+                    )
+                    embed.add_field(name="概要", value=summary, inline=False)
+                    embed.add_field(
+                        name="プロジェクト",
+                        value=f"`{project_dir}`",
+                        inline=False,
+                    )
+                    embed.add_field(
+                        name="次のステップ",
+                        value="手動デプロイ: `cd {dir} && npx vercel --yes`".format(
+                            dir=project_dir
+                        ),
+                        inline=False,
+                    )
+
+                await channel.send(embed=embed)
+                logger.info(f"🔨 Venture構築完了: {vid}")
+
+            else:
+                # 構築失敗 → approved状態に戻す
+                self.manager.update_state(vid, "approved")
+                error = result.get("error", "不明なエラー")
+                await channel.send(
+                    f"⚠️ **{vid} 構築失敗** — 「{venture['name']}」\n"
+                    f"エラー: {error[:500]}\n"
+                    f"再試行: `/venture_build {vid}`"
+                )
+                logger.error(f"🔨 Venture構築失敗: {vid} - {error}")
+
+        except Exception as e:
+            self.manager.update_state(vid, "approved")
+            await channel.send(
+                f"⚠️ **{vid} 構築エラー** — {str(e)[:500]}"
+            )
+            logger.error(f"🔨 Venture構築例外: {vid} - {e}", exc_info=True)
+
     # --- スラッシュコマンド ---
+
+    @app_commands.command(
+        name="venture_build",
+        description="承認済みVentureの構築を手動で開始",
+    )
+    @app_commands.describe(venture_id="Venture ID（例: V001）")
+    async def build_venture(self, interaction: discord.Interaction,
+                            venture_id: str):
+        """手動でVenture構築を開始。"""
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message(
+                "⚡ このコマンドはオーナー専用です。", ephemeral=True
+            )
+            return
+
+        venture_id = venture_id.upper()
+        ventures = self.manager.get_all()
+        venture = ventures.get(venture_id)
+
+        if not venture:
+            await interaction.response.send_message(
+                f"⚠️ {venture_id} が見つかりません。", ephemeral=True
+            )
+            return
+
+        if venture["state"] not in ("approved", "building"):
+            await interaction.response.send_message(
+                f"⚠️ {venture_id} は「{STATES.get(venture['state'], '?')}」状態です。"
+                f"承認済みのVentureのみ構築できます。",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.send_message(
+            f"🔨 **{venture_id}** 「{venture['name']}」の構築を開始します...\n"
+            f"バックグラウンドで実行中。完了したらこのチャンネルに報告します。"
+        )
+
+        asyncio.create_task(
+            self._build_venture(venture_id, venture, interaction.channel)
+        )
+
+    @app_commands.command(
+        name="venture_files",
+        description="Ventureプロジェクトのファイル一覧を表示",
+    )
+    @app_commands.describe(venture_id="Venture ID（例: V001）")
+    async def venture_files(self, interaction: discord.Interaction,
+                            venture_id: str):
+        """Ventureプロジェクトのファイル一覧を表示。"""
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message(
+                "⚡ このコマンドはオーナー専用です。", ephemeral=True
+            )
+            return
+
+        venture_id = venture_id.upper()
+        files = self.builder.list_project_files(venture_id)
+
+        if not files:
+            await interaction.response.send_message(
+                f"📂 {venture_id} のプロジェクトファイルはまだありません。"
+            )
+            return
+
+        file_list = "\n".join(f"  {f}" for f in files[:30])
+        if len(files) > 30:
+            file_list += f"\n  ...他 {len(files) - 30} ファイル"
+
+        await interaction.response.send_message(
+            f"📂 **{venture_id}** プロジェクトファイル ({len(files)}件)\n"
+            f"```\n{file_list}\n```"
+        )
 
     @app_commands.command(
         name="ventures",
