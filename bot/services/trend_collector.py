@@ -8,6 +8,7 @@ import logging
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from typing import Optional, List, Dict
 
 import aiohttp
 
@@ -153,7 +154,7 @@ class TrendCollector:
 
     async def _fetch_hn_item(
         self, session: aiohttp.ClientSession, item_id: int
-    ) -> dict | None:
+    ) -> Optional[dict]:
         """HackerNews個別アイテムを取得。"""
         url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
         try:
@@ -264,7 +265,7 @@ class TrendCollector:
             json.dump(data, f, ensure_ascii=False, indent=2)
         logger.info(f"リサーチデータ保存: {filepath}")
 
-    def get_latest_data(self) -> dict | None:
+    def get_latest_data(self) -> Optional[dict]:
         """最新のリサーチデータを読み込む。"""
         today = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%d")
         filepath = RESEARCH_DIR / f"{today}.json"

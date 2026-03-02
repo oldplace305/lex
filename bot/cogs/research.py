@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import logging
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 from bot.services.trend_collector import TrendCollector
 from bot.services.claude_cli import ClaudeCLIBridge
@@ -97,7 +98,7 @@ class Research(commands.Cog):
         await self.bot.wait_until_ready()
         logger.info("🔍 リサーチ: Bot準備完了。スケジュール監視開始。")
 
-    async def run_research(self) -> dict | None:
+    async def run_research(self) -> Optional[dict]:
         """トレンド収集→Claude分析を実行。
 
         Returns:
@@ -169,11 +170,11 @@ class Research(commands.Cog):
         logger.warning("🔍 JSON抽出失敗。テキスト応答として保持。")
         return {"raw_text": text, "trends": [], "venture_candidate": None, "x_posts": []}
 
-    def get_latest_analysis(self) -> dict | None:
+    def get_latest_analysis(self) -> Optional[dict]:
         """最新の分析結果を取得（日報用）。"""
         return self._last_analysis
 
-    def format_for_report(self, analysis: dict | None = None) -> str:
+    def format_for_report(self, analysis: Optional[dict] = None) -> str:
         """分析結果を日報フォーマットに変換。"""
         if analysis is None:
             analysis = self._last_analysis

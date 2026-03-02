@@ -8,6 +8,7 @@ import json
 import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from typing import Optional, Tuple
 
 from bot.config import OWNER_ID, REPORT_CHANNEL_ID
 from bot.utils.paths import DATA_DIR
@@ -136,7 +137,7 @@ class VentureManager:
             venture["discord_message_id"] = message_id
             self._save(data)
 
-    def find_by_message_id(self, message_id: int) -> tuple[str, dict] | None:
+    def find_by_message_id(self, message_id: int) -> Optional[Tuple[str, dict]]:
         """メッセージIDからVentureを検索。"""
         data = self._load()
         for vid, venture in data["ventures"].items():
@@ -215,7 +216,7 @@ class Ventures(commands.Cog):
 
     async def propose_venture(
         self, channel: discord.TextChannel, analysis: dict
-    ) -> str | None:
+    ) -> Optional[str]:
         """リサーチ分析結果からVentureを提案し、承認リアクションを付ける。
 
         Args:
