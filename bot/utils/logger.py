@@ -15,7 +15,7 @@ def setup_logging(level: str = "INFO"):
 
     # ファイルハンドラ
     file_handler = logging.FileHandler(
-        LOGS_DIR / "sakana-bot.log", encoding="utf-8"
+        LOGS_DIR / "lex.log", encoding="utf-8"
     )
     file_handler.setFormatter(formatter)
 

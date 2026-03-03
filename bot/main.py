@@ -9,7 +9,7 @@ import sys
 import time
 import logging
 from bot.config import DISCORD_TOKEN, LOG_LEVEL
-from bot.sakana_bot import LexBot
+from bot.lex_bot import LexBot
 from bot.utils.logger import setup_logging
 
 # 再起動の最大試行回数

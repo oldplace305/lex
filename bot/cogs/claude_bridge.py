@@ -38,6 +38,9 @@ class ClaudeBridge(commands.Cog):
         self.profile = OwnerProfile()
         self.approval = SmartApproval()
         self.conversation = ConversationManager()
+        # 重複メッセージ処理防止用セット
+        self._processed_message_ids = set()
+        self._max_cache_size = 100
 
     def _is_owner(self, user_id: int) -> bool:
         """オーナーかどうか判定。"""
@@ -294,6 +297,17 @@ class ClaudeBridge(commands.Cog):
 
         if not self._is_owner(message.author.id):
             return
+
+        # 重複メッセージ処理防止
+        if message.id in self._processed_message_ids:
+            logger.debug(f'重複メッセージスキップ: {message.id}')
+            return
+        self._processed_message_ids.add(message.id)
+        # キャッシュサイズ制限
+        if len(self._processed_message_ids) > self._max_cache_size:
+            self._processed_message_ids = set(
+                list(self._processed_message_ids)[-50:]
+            )
 
         is_dm = isinstance(message.channel, discord.DMChannel)
         is_mentioned = (

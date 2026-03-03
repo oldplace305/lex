@@ -4,12 +4,12 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.shuta.sakana-bot</string>
+    <string>com.shuta.lex</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/shuta/sakana-bot-start.sh</string>
+        <string>/Users/shuta/Desktop/lex-start.sh</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -38,11 +38,11 @@
     <key>ThrottleInterval</key>
     <integer>30</integer>
 
-    <!-- ログ出力先（ホームディレクトリ配下でアクセス権限問題を回避） -->
+    <!-- ログ出力先 -->
     <key>StandardOutPath</key>
-    <string>/tmp/sakana-bot-stdout.log</string>
+    <string>/tmp/lex-stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/tmp/sakana-bot-stderr.log</string>
+    <string>/tmp/lex-stderr.log</string>
 </dict>
 </plist>

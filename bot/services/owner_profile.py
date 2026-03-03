@@ -32,7 +32,7 @@ DEFAULT_PROFILE = {
         "デザイン（アマチュアだがセンスあり）",
     ],
     "sns": {
-        "x_handle": "薬剤師のさかな🐟",
+        "x_handle": "Lex@adventure",
         "purpose": "AI×収益化の知見発信、note販売で収益化",
         "content_themes": ["AI活用", "AIビジネス", "AI副業", "薬局×AI"],
     },
@@ -176,7 +176,7 @@ class OwnerProfile:
             f"- テキストのみで応答する。JSONやメタデータは絶対に含めない\n"
             f"\n"
             f"【自己管理機能】\n"
-            f"- 自分自身のソースコードは /Users/shuta/sakana-bot/ にある\n"
+            f"- 自分自身のソースコードはプロジェクトルートにある\n"
             f"- バグ修正や機能追加を頼まれたら、コードを読み、修正し、テストできる\n"
             f"- コード変更後はBot再起動が必要 → /restart コマンドを案内する\n"
             f"- 会話・設定は定期的にローカル環境に保存する\n"

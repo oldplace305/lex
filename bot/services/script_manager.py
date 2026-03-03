@@ -196,7 +196,9 @@ class ScriptManager:
                 env["CLAUDE_CODE_OAUTH_TOKEN"] = CLAUDE_OAUTH_TOKEN
 
             # venv内のPythonを使う場合のPATH追加
-            env["PATH"] = f"/Users/shuta/sakana-bot/venv/bin:{env['PATH']}"
+            # venv内のPythonを使う場合のPATH追加（動的解決）
+            from bot.utils.paths import PROJECT_ROOT as _pr
+            env["PATH"] = f"{_pr / 'venv' / 'bin'}:{env['PATH']}"
 
             # 作業ディレクトリの解決
             cwd = workdir if workdir and Path(workdir).exists() else None

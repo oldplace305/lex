@@ -16,6 +16,8 @@
     }
   },
   "skills": [
+    "AIツール活用（Claude, ChatGPT, 各種AI SaaS）",
+    "PCとAIを使ったコンテンツ制作",
     "ノーコードWeb作成",
     "PCの組み立て",
     "SNS代行",
@@ -24,19 +26,26 @@
     "デザイン（アマチュアだがセンスあり）"
   ],
   "sns": {
-    "x_handle": "薬剤師のさかな🐟",
-    "purpose": "note販売等で収益化",
+    "x_handle": "Lex@adventure",
+    "purpose": "AI×収益化の知見発信、note販売で収益化",
     "content_themes": [
-      "調剤報酬改定",
-      "薬局経営戦略",
       "AI活用",
-      "在宅医療"
+      "AIビジネス",
+      "AI副業",
+      "薬局×AI"
     ]
   },
   "business": {
     "name": "Nosuke Lab",
     "type": "個人事業（スタートアップ＆研究室）",
-    "vision": "スキルを活用したコンサル・コンテンツ制作",
+    "vision": "AIとの協業で収益を創出する",
+    "core_strategy": "AIを最大の武器として活用し、個人でもスケールする収益モデルを構築する",
+    "focus_areas": [
+      "英語圏AIトレンドの日本市場展開",
+      "AIツール・SaaSの構築と販売",
+      "AI活用ノウハウのコンテンツ販売（note等）",
+      "薬剤師×AIのニッチビジネス"
+    ],
     "revenue_goals": {
       "2026": {
         "annual_gross_profit": "60万円",
@@ -57,6 +66,7 @@
     "preferences": "長文説明より要点整理。判断材料を提示してほしい"
   },
   "current_projects": [
-    "Nosuke Lab 立ち上げ"
+    "Nosuke Lab 立ち上げ",
+    "AI×収益化リサーチ自動化（Lex Ventures）"
   ]
 }
