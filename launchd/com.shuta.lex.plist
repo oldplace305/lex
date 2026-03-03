@@ -9,7 +9,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/shuta/Desktop/lex-start.sh</string>
+        <string>/Users/shuta/lex-start.sh</string>
     </array>
 
     <key>WorkingDirectory</key>
