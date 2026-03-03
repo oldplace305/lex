@@ -29,7 +29,8 @@ PM_REPORT_HOUR = 18   # 午後6時
 # --- v2 プロンプト ---
 
 AM_REPORT_PROMPT = """
-あなたはLex。Lex Venturesの朝の定期報告を行ってください。
+あなたはLex。Nosuke Labの最重要戦略は「AIとの協業」で収益を作ること。
+朝の定期報告を行ってください。収益化に繋がらないニュースは報告しない。
 
 ## 本日のリサーチデータ
 {research_data}
@@ -41,13 +42,15 @@ AM_REPORT_PROMPT = """
 ```
 ━━━ Lex Daily Report — AM ━━━
 
-📊 今日のリサーチ (N件)
-[リサーチデータから注目トレンド3件を日本語で簡潔に紹介]
+📊 AI収益化リサーチ (N件)
+[リサーチデータからS〜B評価付きで注目トレンド3件を紹介]
+[各トレンドに収益化シナリオを1行添える]
 
-💡 Venture候補
-[リサーチから最も有望な1件を提案。ただしresearch_dataにventure_candidateがあればそれを使う]
+💡 Venture候補 [S/A/B]
+[リサーチから最も有望な1件を提案。AI技術と収益化方法を明記]
+  AI技術: [活用するAIツール]
   元ネタ: [ソース]
-  想定: [収益化方法]
+  収益化: [具体的な方法]
   → ✅ 承認 / ❌ スキップ
 
 📋 システム状況
@@ -59,7 +62,8 @@ AM_REPORT_PROMPT = """
 """.strip()
 
 NOON_REPORT_PROMPT = """
-あなたはLex。Lex Venturesの昼の定期報告を行ってください。
+あなたはLex。Nosuke Labの最重要戦略は「AIとの協業」で収益を作ること。
+昼の定期報告を行ってください。収益化に繋がらないニュースは報告しない。
 
 ## Venture状況
 {venture_summary}
@@ -77,6 +81,9 @@ NOON_REPORT_PROMPT = """
 📱 X投稿状況
 [X投稿統計データを反映]
 
+💡 AI×収益化コンテンツ戦略
+[今日のリサーチからnote記事やX投稿に使えそうなネタを1つ提案]
+
 📈 数字
   稼働中Venture: N | 構築中: N | 累計PV: N
 ```
@@ -85,7 +92,8 @@ NOON_REPORT_PROMPT = """
 """.strip()
 
 PM_REPORT_PROMPT = """
-あなたはLex。Lex Venturesの夕方の定期報告を行ってください。
+あなたはLex。Nosuke Labの最重要戦略は「AIとの協業」で収益を作ること。
+夕方の定期報告を行ってください。収益化に繋がらないニュースは報告しない。
 
 ## 今日のリサーチ結果
 {research_data}
@@ -98,14 +106,14 @@ PM_REPORT_PROMPT = """
 ━━━ Lex Daily Report — PM ━━━
 
 ✅ 今日の成果
-  リサーチ: N記事分析、N件を報告
+  リサーチ: N記事分析、S〜B評価N件を報告
   [Venture進捗があれば記載]
 
 📊 Venture一覧
   [稼働中Ventureがあれば一覧]
 
-🔍 明日のリサーチ
-  テーマ: [明日の注目分野を1つ提案]
+🔍 明日のAIリサーチテーマ
+  [明日注目すべきAI×収益化の分野を1つ提案。理由も添える]
 
 💰 月間サマリー
   Venture収益: ¥N (今月)

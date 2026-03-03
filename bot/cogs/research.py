@@ -25,42 +25,64 @@ RESEARCH_TIMES = [
     (17, 30),  # 夕リサーチ
 ]
 
-# 分析プロンプト
+# 分析プロンプト（AI×収益化特化）
 ANALYSIS_PROMPT = """
-あなたはLex Ventures のリサーチアナリスト。
-以下の英語圏テクノロジートレンドデータを分析してください。
+あなたはNosuke Labのリサーチアナリスト。
+Nosuke Labの最重要戦略は「AIとの協業で収益を創出する」こと。
+
+以下の英語圏AIトレンドデータを分析し、**現実的に収益化できるもの**だけを厳選してください。
 
 ## 分析タスク
-1. **日本で未注目のトレンド**: 日本語圏でまだ話題になっていない、早期キャッチすべきネタを3件選定
-2. **Venture候補**: 上記から、日本語版ツール・サービスとして構築可能なものを1件提案
-3. **X投稿ネタ**: 日本語ツイートにできそうな速報ネタを3件ピックアップ
+1. **収益化可能なAIトレンド**: 個人〜少人数で収益化できるAI関連トレンドを3件選定
+2. **Venture候補**: 上記から、AIを活用して日本市場で構築可能なサービス・ツールを1件提案
+3. **X投稿ネタ**: 日本語ツイートにできそうなAI速報ネタを3件ピックアップ
+
+## S〜B収益化評価基準
+- **S**: 即着手可能、低コスト（月1万以下）、AIで構築可能、日本未上陸
+- **A**: 3ヶ月以内に着手可能、中程度投資、市場が確実に存在
+- **B**: 半年〜1年スパン、要検証だがポテンシャルが大きい
+
+## 除外条件（これらは報告しない）
+- 単なるニュース（収益化に繋がらない情報）
+- エンタープライズ向け（大企業専用で個人に関係ない）
+- 大規模資金が必要（数百万円以上の初期投資）
+- 規制リスクが高すぎるもの
+
+## 薬剤師関連について
+- 薬剤師ネタは「副業・ビジネス（お金になること）」のみ対象
+- 薬学知識を活かしたAIビジネスは積極的に拾う
+- 単なる薬局ニュースや業界動向は除外
 
 ## 出力フォーマット（JSON）
 ```json
-{
+{{
     "trends": [
-        {
+        {{
             "title": "トレンド名",
             "source": "ソース名",
             "why_notable": "なぜ注目すべきか（日本語1-2文）",
-            "score": スコア数値
-        }
+            "score": スコア数値,
+            "rating": "S/A/B",
+            "revenue_scenario": "具体的な収益化シナリオ（日本語1文）"
+        }}
     ],
-    "venture_candidate": {
+    "venture_candidate": {{
         "name": "提案名（日本語）",
         "description": "概要（日本語2-3文）",
         "source_trend": "元ネタのトレンド名",
         "monetization": "収益化方法",
+        "ai_tools": "活用するAIツール・技術",
+        "rating": "S/A/B",
         "difficulty": "easy/medium/hard",
         "estimated_build_time": "見積もり時間"
-    },
+    }},
     "x_posts": [
-        {
+        {{
             "topic": "投稿テーマ",
             "hook": "ツイートの冒頭（日本語、注目を引くフレーズ）"
-        }
+        }}
     ]
-}
+}}
 ```
 
 ## トレンドデータ
@@ -182,7 +204,7 @@ class Research(commands.Cog):
         return self._last_analysis
 
     def format_for_report(self, analysis: Optional[dict] = None) -> str:
-        """分析結果を日報フォーマットに変換。"""
+        """分析結果を日報フォーマットに変換（S〜B評価付き）。"""
         if analysis is None:
             analysis = self._last_analysis
         if not analysis:
@@ -190,27 +212,34 @@ class Research(commands.Cog):
 
         lines = []
 
-        # トレンド
+        # トレンド（収益化評価付き）
         trends = analysis.get("trends", [])
         if trends:
-            lines.append(f"📊 今日のリサーチ ({len(trends)}件)")
+            lines.append(f"📊 AI収益化リサーチ ({len(trends)}件)")
             for i, trend in enumerate(trends, 1):
                 source = trend.get("source", "?")
                 title = trend.get("title", "?")
                 why = trend.get("why_notable", "")
+                rating = trend.get("rating", "")
+                rating_str = f" [{rating}]" if rating else ""
                 score = trend.get("score", "")
                 score_str = f" ({score}pt)" if score else ""
-                lines.append(f"{i}. [{source}] {title}{score_str}")
+                lines.append(f"{i}.{rating_str} [{source}] {title}{score_str}")
                 if why:
                     lines.append(f"   → {why}")
+                revenue = trend.get("revenue_scenario", "")
+                if revenue:
+                    lines.append(f"   💰 {revenue}")
         else:
-            lines.append("📊 リサーチ: 注目トレンドなし")
+            lines.append("📊 リサーチ: 収益化可能なトレンドなし")
 
-        # Venture候補
+        # Venture候補（AI技術付き）
         venture = analysis.get("venture_candidate")
         if venture:
             lines.append("")
-            lines.append("💡 Venture候補")
+            v_rating = venture.get("rating", "")
+            v_rating_str = f" [{v_rating}]" if v_rating else ""
+            lines.append(f"💡 Venture候補{v_rating_str}")
             lines.append(f"「{venture.get('name', '?')}」")
             desc = venture.get("description", "")
             if desc:
@@ -218,6 +247,9 @@ class Research(commands.Cog):
             source = venture.get("source_trend", "")
             if source:
                 lines.append(f"  元ネタ: {source}")
+            ai_tools = venture.get("ai_tools", "")
+            if ai_tools:
+                lines.append(f"  AI技術: {ai_tools}")
             monetization = venture.get("monetization", "")
             if monetization:
                 lines.append(f"  収益化: {monetization}")

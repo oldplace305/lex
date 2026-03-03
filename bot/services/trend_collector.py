@@ -19,18 +19,30 @@ logger = logging.getLogger(__name__)
 # リサーチデータ保存先
 RESEARCH_DIR = DATA_DIR / "research"
 
-# 収集ソース
+# 収集ソース（AI特化: 9ソース、全て無料・認証不要）
 SOURCES = {
     "hackernews": {
         "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
         "type": "api",
     },
-    "reddit_technology": {
-        "url": "https://www.reddit.com/r/technology/top.json?t=day&limit=15",
+    "reddit_artificial": {
+        "url": "https://www.reddit.com/r/artificial/top.json?t=day&limit=15",
         "type": "reddit",
     },
-    "reddit_programming": {
-        "url": "https://www.reddit.com/r/programming/top.json?t=day&limit=15",
+    "reddit_machinelearning": {
+        "url": "https://www.reddit.com/r/MachineLearning/top.json?t=day&limit=15",
+        "type": "reddit",
+    },
+    "reddit_localllama": {
+        "url": "https://www.reddit.com/r/LocalLLaMA/top.json?t=day&limit=15",
+        "type": "reddit",
+    },
+    "reddit_singularity": {
+        "url": "https://www.reddit.com/r/singularity/top.json?t=day&limit=15",
+        "type": "reddit",
+    },
+    "reddit_sideproject": {
+        "url": "https://www.reddit.com/r/SideProject/top.json?t=day&limit=15",
         "type": "reddit",
     },
     "techcrunch": {
@@ -41,10 +53,14 @@ SOURCES = {
         "url": "https://www.theverge.com/rss/index.xml",
         "type": "rss",
     },
+    "ars_technica_ai": {
+        "url": "https://feeds.arstechnica.com/arstechnica/technology-lab",
+        "type": "rss",
+    },
 }
 
 # ユーザーエージェント（Reddit API要件）
-USER_AGENT = "LexVentures/1.0 (Discord Bot; trend research)"
+USER_AGENT = "NosukeLab/1.0 (Discord Bot; AI trend research)"
 
 # リクエストタイムアウト
 REQUEST_TIMEOUT = 15
