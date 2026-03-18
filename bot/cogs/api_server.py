@@ -314,6 +314,25 @@ class ApiServer(commands.Cog):
                     {"status": "error", "error": f"ファイル受信エラー: {e}"}, 400
                 )
 
+        # --- モード3: その他（生バイナリ or form-urlencoded） ---
+        # iOSショートカットがform-urlencodedで送ることがあるため、
+        # bodyを直接音声データとして扱う
+        try:
+            raw_body = await request.read()
+            if raw_body and len(raw_body) > 1000:
+                # 1KB以上あれば音声ファイルとみなす
+                size_mb = len(raw_body) / (1024 * 1024)
+                logger.info(f"🎤 /voice 生データ受信: {size_mb:.1f}MB (Content-Type: {content_type})")
+                self.bot.loop.create_task(
+                    self._process_voice_audio(raw_body, "audio.m4a")
+                )
+                return self._json_response({
+                    "status": "ok",
+                    "message": "音声データを受信しました。文字起こし→処理を開始します。",
+                })
+        except Exception:
+            pass
+
         return self._json_response(
             {"status": "error", "error": "Content-Type は application/json または multipart/form-data にしてください"}, 400
         )
