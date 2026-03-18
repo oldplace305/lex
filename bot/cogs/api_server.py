@@ -11,7 +11,7 @@ import json
 import logging
 from aiohttp import web
 from discord.ext import commands
-from bot.config import OWNER_ID, REPORT_CHANNEL_ID, API_PORT
+from bot.config import OWNER_ID, REPORT_CHANNEL_ID, API_HOST, API_PORT, API_TOKEN
 from bot.services.apple_notes import AppleNotesService
 
 logger = logging.getLogger(__name__)
@@ -28,19 +28,36 @@ class ApiServer(commands.Cog):
 
     def _setup_app(self):
         """aiohttpアプリケーションとルートを設定。"""
-        self.app = web.Application()
+        self.app = web.Application(middlewares=[self._auth_middleware])
         self.app.router.add_get("/health", self.handle_health)
         self.app.router.add_post("/memo", self.handle_memo)
         self.app.router.add_post("/notify", self.handle_notify)
         self.app.router.add_post("/research", self.handle_research)
 
+    @web.middleware
+    async def _auth_middleware(self, request: web.Request, handler):
+        """Bearer トークン認証ミドルウェア。
+        API_TOKENが空なら認証スキップ。/healthは常にスキップ。
+        """
+        if request.path == "/health" or not API_TOKEN:
+            return await handler(request)
+
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header == f"Bearer {API_TOKEN}":
+            return await handler(request)
+
+        return self._json_response(
+            {"status": "error", "error": "認証エラー: 無効なトークン"}, 401
+        )
+
     async def cog_load(self):
         """Cog読み込み時にHTTPサーバーを起動。"""
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
-        site = web.TCPSite(self.runner, "127.0.0.1", API_PORT)
+        site = web.TCPSite(self.runner, API_HOST, API_PORT)
         await site.start()
-        logger.info(f"⚡ APIサーバー起動: http://127.0.0.1:{API_PORT}")
+        auth_status = "Bearer認証あり" if API_TOKEN else "認証なし"
+        logger.info(f"⚡ APIサーバー起動: http://{API_HOST}:{API_PORT} ({auth_status})")
 
     async def cog_unload(self):
         """Cog解除時にHTTPサーバーを停止。"""
