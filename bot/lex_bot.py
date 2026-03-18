@@ -47,6 +47,7 @@ class LexBot(commands.Bot):
             "bot.cogs.backup",
             "bot.cogs.health",
             "bot.cogs.self_repair",
+            "bot.cogs.api_server",
         ]
 
         for cog in cog_list:

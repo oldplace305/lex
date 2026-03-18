@@ -30,5 +30,8 @@ X_API_SECRET = os.getenv("X_API_SECRET", "")
 X_ACCESS_TOKEN = os.getenv("X_ACCESS_TOKEN", "")
 X_ACCESS_SECRET = os.getenv("X_ACCESS_SECRET", "")
 
+# ローカルAPI設定 (Phase 2: 音声ワークフロー)
+API_PORT = int(os.getenv("API_PORT", "8765"))
+
 # ログ設定
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
