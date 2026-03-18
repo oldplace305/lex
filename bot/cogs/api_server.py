@@ -249,6 +249,7 @@ class ApiServer(commands.Cog):
         結果はDiscord通知で報告。
         """
         content_type = request.content_type or ""
+        logger.info(f"🎤 /voice Content-Type: {content_type}")
 
         # --- モード1: JSON（テキスト直接送信） ---
         if "json" in content_type:
@@ -278,10 +279,18 @@ class ApiServer(commands.Cog):
                 filename = "audio.m4a"
 
                 async for part in reader:
-                    if part.name == "audio":
+                    logger.info(f"multipart パート受信: name={part.name}, filename={part.filename}")
+                    if part.name in ("audio", "file", "recording"):
+                        # iOSショートカットのフィールド名の揺れに対応
                         filename = part.filename or filename
                         audio_data = await part.read()
                         break
+                    else:
+                        # 最初のファイルパートを音声として扱う
+                        if part.filename:
+                            filename = part.filename
+                            audio_data = await part.read()
+                            break
 
                 if not audio_data:
                     return self._json_response(
