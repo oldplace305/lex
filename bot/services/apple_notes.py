@@ -98,24 +98,21 @@ class AppleNotesService:
         escaped_html = html_block.replace("\\", "\\\\").replace('"', '\\"')
         escaped_name = note_name.replace("\\", "\\\\").replace('"', '\\"')
 
+        # whose句で高速検索（全ノート走査を回避）
         script = f'''
 tell application "Notes"
     set targetFolder to folder "Notes" of account "iCloud"
-    set noteFound to false
     set newContent to "{escaped_html}"
 
-    -- ノートを検索
-    repeat with aNote in notes of targetFolder
-        if name of aNote is "{escaped_name}" then
-            -- 既存ノートに追記
-            set body of aNote to (body of aNote) & newContent
-            set noteFound to true
-            exit repeat
-        end if
-    end repeat
+    -- whose句で名前が一致するノートを高速検索
+    set matchingNotes to (notes of targetFolder whose name is "{escaped_name}")
 
-    -- ノートが見つからなければ新規作成
-    if not noteFound then
+    if (count of matchingNotes) > 0 then
+        -- 既存ノートに追記
+        set targetNote to item 1 of matchingNotes
+        set body of targetNote to (body of targetNote) & newContent
+    else
+        -- ノートが見つからなければ新規作成
         make new note at targetFolder with properties {{name:"{escaped_name}", body:"<h1>{escaped_name}</h1>" & newContent}}
     end if
 end tell
@@ -128,7 +125,7 @@ return "ok"
             ["osascript", "-e", script],
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=60,
         )
 
         if result.returncode != 0:
