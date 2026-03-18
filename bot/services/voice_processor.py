@@ -167,40 +167,83 @@ class VoiceProcessor:
         Claude CLIは時々JSONの前後に説明テキストを入れることがあるため、
         JSON部分だけを抽出する。
         """
+        parsed = None
+
         # まず直接JSONパースを試みる
         try:
-            return json.loads(response_text.strip())
+            parsed = json.loads(response_text.strip())
         except json.JSONDecodeError:
             pass
 
         # コードブロック内のJSONを探す（```json ... ``` パターン）
-        code_block_match = re.search(
-            r'```(?:json)?\s*\n?(.*?)\n?```',
-            response_text,
-            re.DOTALL,
-        )
-        if code_block_match:
-            try:
-                return json.loads(code_block_match.group(1).strip())
-            except json.JSONDecodeError:
-                pass
+        if parsed is None:
+            code_block_match = re.search(
+                r'```(?:json)?\s*\n?(.*?)\n?```',
+                response_text,
+                re.DOTALL,
+            )
+            if code_block_match:
+                try:
+                    parsed = json.loads(code_block_match.group(1).strip())
+                except json.JSONDecodeError:
+                    pass
 
         # { から } までの最大範囲を探す
-        brace_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-        if brace_match:
-            try:
-                return json.loads(brace_match.group(0))
-            except json.JSONDecodeError:
-                pass
+        if parsed is None:
+            brace_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+            if brace_match:
+                try:
+                    parsed = json.loads(brace_match.group(0))
+                except json.JSONDecodeError:
+                    pass
 
         # どれも失敗した場合はフォールバック
-        logger.warning(f"JSONパース失敗。フォールバック処理: {response_text[:200]}")
-        return {
-            "task_type": "memo",
-            "note_name": "メモ",
-            "raw_text": response_text,
-            "rewritten_text": "(JSON解析失敗・原文保存)",
-            "discord_summary": "JSON解析に失敗したため、原文をメモに保存しました",
-            "research_query": None,
-            "warnings": None,
-        }
+        if parsed is None:
+            logger.warning(f"JSONパース失敗。フォールバック処理: {response_text[:200]}")
+            return {
+                "task_type": "memo",
+                "note_name": "メモ",
+                "raw_text": response_text,
+                "rewritten_text": "(JSON解析失敗・原文保存)",
+                "discord_summary": "JSON解析に失敗したため、原文をメモに保存しました",
+                "research_query": None,
+                "warnings": None,
+            }
+
+        # 各フィールドを文字列に正規化（dictやlistが入っている場合がある）
+        return self._normalize_fields(parsed)
+
+    def _normalize_fields(self, parsed: dict) -> dict:
+        """JSONフィールドを文字列に正規化する。
+
+        Claude CLIがrewritten_textをdictやlistで返すことがあるため、
+        すべてのテキストフィールドを文字列に変換する。
+        """
+        str_fields = ["raw_text", "rewritten_text", "discord_summary",
+                       "research_query", "warnings"]
+        for field in str_fields:
+            value = parsed.get(field)
+            if value is None:
+                continue
+            if isinstance(value, dict):
+                # dictの場合はJSON風に整形して文字列化
+                parts = []
+                for k, v in value.items():
+                    if isinstance(v, str):
+                        parts.append(f"【{k}】\n{v}")
+                    else:
+                        parts.append(f"【{k}】\n{json.dumps(v, ensure_ascii=False)}")
+                parsed[field] = "\n\n".join(parts)
+            elif isinstance(value, list):
+                # listの場合は改行で結合
+                str_items = []
+                for item in value:
+                    if isinstance(item, str):
+                        str_items.append(item)
+                    else:
+                        str_items.append(json.dumps(item, ensure_ascii=False))
+                parsed[field] = "\n".join(str_items)
+            elif not isinstance(value, str):
+                parsed[field] = str(value)
+
+        return parsed
